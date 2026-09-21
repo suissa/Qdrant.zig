@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      qdrant:
+        image: qdrant/qdrant:v1.15.4
+        ports:
+          - 6333:6333
+          - 6334:6334
+    steps:
+      - uses: actions/checkout@v5
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0
+      - name: Install gRPC development library
+        run: sudo apt-get update && sudo apt-get install --yes libgrpc-dev
+      - name: Wait for Qdrant
+        run: |
+          for attempt in {1..30}; do
+            curl --fail --silent http://localhost:6333/healthz && exit 0
+            sleep 2
+          done
+          exit 1
+      - name: Check formatting
+        run: zig fmt --check build.zig src tests
+      - name: Unit tests
+        run: zig build test
+      - name: Qdrant integration tests
+        run: zig build integration-test
