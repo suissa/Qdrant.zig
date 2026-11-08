@@ -31,7 +31,7 @@ jobs:
           done
           exit 1
       - name: Check formatting
-        run: zig fmt --check build.zig src tests vendor/ubiq
+        run: zig fmt --check build.zig src tests
       - name: Unit tests
         run: zig build test
       - name: Qdrant integration tests

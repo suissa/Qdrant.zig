@@ -24,27 +24,9 @@ test "Qdrant gRPC collection and vector lifecycle" {
     try std.testing.expect(health.protobuf.len != 0);
 
     cleanup(&client, allocator);
-    // CreateCollection protobuf: name (field 1), vectors_config (field 10),
-    // VectorParams size (field 1) and Cosine distance (field 2).
-    const create_request = [_]u8{ 0x0a, 0x14, 'z', 'i', 'g', '_', 'g', 'r', 'p', 'c', '_', 'i', 'n', 't', 'e', 'g', 'r', 'a', 't', 'i', 'o', 'n', 0x52, 0x06, 0x0a, 0x04, 0x08, 0x04, 0x10, 0x01 };
-    const request_event: qdrant.events.event.Envelope = .{
-        .id = "evt-create",
-        .event = try qdrant.events.event.CanonicalEvent.parse("create.collection.request"),
-        .correlation_id = "integration",
-        .causation_id = "",
-        .idempotency_key = "create-integration",
-        .schema_id = "create.collection.request@1",
-        .payload = &create_request,
-        .guarantee = .processed,
-        .created_at_ms = 1,
-    };
-    var created = try qdrant.events.handle(allocator, &client, request_event);
-    defer created.deinit();
-    try expectSuccess(created.response);
-    try std.testing.expectEqualStrings("create.collection.ok", created.envelope.event.name);
-    var event_hub = qdrant.events.Hub(4, 1024){};
-    _ = try event_hub.emit(created.envelope);
-    try std.testing.expectEqual(@as(usize, 1), event_hub.memory.len);
+    var created = try client.createCollection(.{ .name = "zig_grpc_integration", .vector_size = 4 });
+    defer created.deinit(allocator);
+    try expectSuccess(created);
     defer cleanup(&client, allocator);
 
     const points = [_]qdrant.Point{

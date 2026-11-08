@@ -6,8 +6,6 @@
 
 const std = @import("std");
 
-pub const events = @import("events.zig");
-
 const NativeResult = extern struct {
     response: ?[*]u8,
     response_len: usize,
